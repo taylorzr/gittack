@@ -21,7 +21,7 @@ class Attack
     end
   end
 
-  def ssh_session
+  def scp_session
     Net:SCP.start(@host, @login, password: @password) do |scp|
       yield(scp)
     end
