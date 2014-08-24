@@ -12,7 +12,7 @@ class Attack
     @host = host
     @login = login
     @password = password
-    @home = "#{@home}"
+    @home = "/Users/apprentice"
   end
 
   def ssh_session
@@ -63,7 +63,7 @@ class Attack
   def configure_githooks
     ssh_session do |ssh|
       template_path = ssh.execute!("git config --global init.templatedir")
-      if not template
+      if not template_path
         template_path = "#{@home}/.git-templates"
         ssh.execute!("mkdir #{template_path}")
         ssh.execute!("mkdir #{template_path}/hooks")
