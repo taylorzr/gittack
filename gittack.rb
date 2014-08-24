@@ -1,28 +1,23 @@
 require 'net/ssh'
 require 'net/scp'
-
-dbc_hosts = (1..34).map{ |number| "dbc%02d.local" % number }
-
-host = 'dbc26.local'
-login = 'apprentice'
-password = 'mvclover'
+require 'rye'
 
 class Attack
-  def initialize(host, login, password)
+  def initialize(host, user, password)
     @host = host
-    @login = login
+    @user = user
     @password = password
     @home = "/Users/apprentice"
   end
 
   def ssh_session
-    Net:SSH.start(@host, @login, password: @password) do |ssh|
+    Net:SSH.start(@host, @user, password: @password) do |ssh|
       yield(ssh)
     end
   end
 
   def scp_session
-    Net:SCP.start(@host, @login, password: @password) do |scp|
+    Net:SCP.start(@host, @user, password: @password) do |scp|
       yield(scp)
     end
   end
@@ -81,10 +76,25 @@ class Attack
   end
 end
 
-attack = Attack.new(host, login, password)
+dbc_hosts = (1..34).map{ |number| "dbc%02d.local" % number }
+
+host = 'dbc26.local'
+user = 'apprentice'
+password = 'mvclover'
+
+attack = Attack.new(host, user, password)
 attack.install_imageleap
 attack.install_zorak
 attack.configure_githooks
 attack.install_githooks
 attack.install_nyan
 attack.config_nyan
+
+rset = Rye::Set.new(parallel: true)
+dbc_hosts.each do |host|
+  rbox = Rye::Box.new(host, user: user, safe: false, password: password, password_prompt: false)
+  rset.add_box(rbox)
+end
+
+puts rset.hostname
+
