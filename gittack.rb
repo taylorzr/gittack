@@ -2,14 +2,6 @@ require 'net/ssh'
 require 'net/scp'
 require 'rye'
 
-# def install_nyan(box)
-#   box.execute("gem install nyan-cat-formatter")
-# end
-
-host = 'dbc12.local'
-user = 'apprentice'
-password = 'mvclover'
-
 $home_path = "/users/Apprentice"
 $git_templates_path = "#{$home_path}/.git-templates"
 $git_hooks_path = "#{$git_templates_path}/hooks"
@@ -24,6 +16,7 @@ def install_imageleap(box)
   find_result = box.mdfind("imageleap")
   if find_result.code == 0 and find_result.stdout.to_s == ""
     box.mkdir("#{$assets_path}") if box.ls($assets_path).code == 1
+    box.cd("#{$assets_path}")
     box.execute("git clone https://github.com/daytonn/imageleap.git") if box.ls("#{$assets_path}/imageleap").code == 1
     box.cd("imageleap")
     box.make
@@ -50,11 +43,24 @@ def attack(box)
   configure_githooks(box)
 end
 
-dbc_hosts = (1..34).map{ |number| "dbc%02d.local" % number }
+dbc_hosts = (16..34).map{ |number| "dbc%02d.local" % number }
+user = 'apprentice'
+password = 'mvclover'
 
 dbc_hosts.each do |dbc_host|
-  box = Rye::Box.new(dbc_host, user: user, safe: false, password: password, password_prompt: false, quiet: true)
-  attack(box)
+  begin
+    box = Rye::Box.new(dbc_host, user: user, safe: false, password: password, password_prompt: false, quiet: true)
+    puts "Attacking #{box.host}..."
+    attack(box)
+    puts "Done Attacking #{box.host}."
+    puts
+  rescue
+    puts "Could not attack #{box.host}"
+    puts
+    next
+  end
 end
+
+
 
 
