@@ -50,12 +50,7 @@ def attack(box)
   configure_githooks(box)
 end
 
-# box = Rye::Box.new("dbc10.local", user: user, safe: false, password: password, password_prompt: false, quiet: true)
-# box = Rye::Box.new("dbc10.local", user: "apprentice", safe: false, password: "mvclover", password_prompt: false, quiet: true)
-
-# dbc_hosts = (1..34).map{ |number| "dbc%02d.local" % number }
-
-dbc_hosts = (9..14).map{ |number| "dbc%02d.local" % number }
+dbc_hosts = (1..34).map{ |number| "dbc%02d.local" % number }
 
 dbc_hosts.each do |dbc_host|
   box = Rye::Box.new(dbc_host, user: user, safe: false, password: password, password_prompt: false, quiet: true)
